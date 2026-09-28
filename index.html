@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inside the Print</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --bg:#E7EAEE; --surface:#FFFFFF; --surface2:#F3F6F8;
+  --ink:#141922; --ink2:#5A6572; --ink3:#8D99A6;
+  --line:#CBD3DB; --line2:#E2E8ED;
+  --amber:#B0520A; --amberfill:#F2DDC8;
+  --cyan:#0B6379; --cyanfill:#D2E7ED;
+  --grid:#AEBAC5;
+  --shadow:0 1px 2px rgba(20,25,34,.06),0 8px 24px rgba(20,25,34,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1319; --surface:#161C24; --surface2:#1D252E;
+    --ink:#E7ECF1; --ink2:#95A2AF; --ink3:#6C7987;
+    --line:#2B343E; --line2:#222A33;
+    --amber:#F2913F; --amberfill:#3E2A15;
+    --cyan:#58C6E0; --cyanfill:#12313B;
+    --grid:#3A4753;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.28);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1319; --surface:#161C24; --surface2:#1D252E;
+  --ink:#E7ECF1; --ink2:#95A2AF; --ink3:#6C7987;
+  --line:#2B343E; --line2:#222A33;
+  --amber:#F2913F; --amberfill:#3E2A15;
+  --cyan:#58C6E0; --cyanfill:#12313B;
+  --grid:#3A4753;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.28);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.5;
+  padding:0 16px; padding-block:18px 28px;
+}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+/* header */
+.masthead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-family:Archivo,sans-serif;font-weight:700;font-size:19px;letter-spacing:-.01em}
+.brand span{color:var(--amber)}
+.sub{font-size:12.5px;color:var(--ink2)}
+
+/* step rail */
+.rail{display:flex;gap:6px;flex-wrap:wrap}
+.step{
+  flex:1 1 150px; min-width:0; text-align:left; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); border-radius:3px;
+  padding:9px 11px; display:flex; gap:9px; align-items:baseline;
+  font:inherit; color:var(--ink2); transition:border-color .15s,color .15s;
+}
+.step:hover{border-color:var(--ink3)}
+.step .n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink3);flex:none}
+.step .t{font-family:Archivo,sans-serif;font-weight:600;font-size:13px;letter-spacing:.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step[aria-current="true"]{border-color:var(--amber);color:var(--ink);box-shadow:inset 0 -2px 0 var(--amber)}
+.step[aria-current="true"] .n{color:var(--amber)}
+.step:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* stage */
+.stage{
+  background:var(--surface); border:1px solid var(--line); border-radius:4px;
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.stage-head{
+  padding:13px 16px 11px; border-bottom:1px solid var(--line2);
+  display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap;
+}
+.stage-head h2{
+  margin:0; font-family:Archivo,sans-serif; font-weight:700; font-size:17px;
+  letter-spacing:-.005em; text-wrap:balance;
+}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--amber); display:block; margin-bottom:3px;
+}
+.say{font-size:13px;color:var(--ink2);max-width:46ch;margin:0}
+.qline{
+  margin:0; padding:16px 18px; background:var(--surface2);
+  border-top:1px solid var(--line2); border-bottom:1px solid var(--line2);
+  font-family:Archivo,sans-serif; font-weight:700; font-size:22px; line-height:1.25;
+  letter-spacing:-.01em; color:var(--ink); text-wrap:balance;
+}
+.qline em{font-style:normal;color:var(--amber)}
+@media (max-width:520px){.qline{font-size:18px}}
+.canvas{padding:8px 10px 16px;background:var(--surface)}
+svg{display:block;width:100%;height:auto;max-width:100%}
+
+/* controls */
+.panel{
+  border-top:1px solid var(--line2); background:var(--surface2);
+  padding:12px 16px 14px; display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end;
+}
+.ctl{display:flex;flex-direction:column;gap:5px;flex:1 1 190px;min-width:150px}
+.ctl label{
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--ink2);
+  display:flex; justify-content:space-between; gap:8px;
+}
+.ctl label b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--amber);margin:0;cursor:pointer}
+.btnrow{display:flex;gap:7px;flex:0 0 auto;flex-wrap:wrap}
+button.b{
+  font:600 12.5px/1 "IBM Plex Sans",sans-serif; cursor:pointer;
+  background:var(--surface); color:var(--ink); border:1px solid var(--line);
+  border-radius:3px; padding:9px 13px; transition:border-color .15s,background .15s;
+}
+button.b:hover{border-color:var(--amber)}
+button.b[aria-pressed="true"],button.b.on{background:var(--amber);border-color:var(--amber);color:#fff}
+:root[data-theme="dark"] button.b.on,
+:root[data-theme="dark"] button.b[aria-pressed="true"]{color:#1A1005}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.b.on,
+  :root:not([data-theme="light"]) button.b[aria-pressed="true"]{color:#1A1005}}
+button.b:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* readouts */
+.reads{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 14px;background:var(--surface2)}
+.read{
+  flex:1 1 130px; background:var(--surface); border:1px solid var(--line2);
+  border-radius:3px; padding:8px 10px;
+}
+.read .k{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink2)}
+.read .v{font-family:Archivo,sans-serif;font-weight:700;font-size:19px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-top:1px}
+.read .v small{font-size:11.5px;font-weight:500;color:var(--ink2);letter-spacing:0}
+.read.hot .v{color:var(--amber)}
+.read.cool .v{color:var(--cyan)}
+
+/* meters */
+.meters{display:flex;flex-direction:column;gap:9px;padding:2px 16px 14px;background:var(--surface2)}
+.meter{display:grid;grid-template-columns:112px 1fr 68px;gap:10px;align-items:center}
+.meter .ml{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink2)}
+.meter .bar{height:11px;background:var(--line2);border-radius:2px;overflow:hidden;border:1px solid var(--line2)}
+.meter .fill{height:100%;background:var(--amber);border-radius:1px;transition:width .18s ease}
+.meter .fill.c2{background:var(--cyan)}
+.meter .mv{font-family:"IBM Plex Mono",monospace;font-size:12px;text-align:right;
+  font-variant-numeric:tabular-nums;color:var(--ink)}
+@media (max-width:520px){.meter{grid-template-columns:90px 1fr 58px}}
+
+/* footer nav */
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--ink3);font-family:"IBM Plex Mono",monospace}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="masthead">
+    <div class="brand">Inside the <span>Print</span></div>
+    <div class="sub">Teaching aid &middot; drive it live, left and right arrows advance</div>
+  </div>
+
+  <div class="rail" id="rail" role="tablist" aria-label="Demo steps"></div>
+
+  <div class="stage">
+    <div class="stage-head">
+      <div>
+        <span class="eyebrow" id="eyebrow"></span>
+        <h2 id="title"></h2>
+      </div>
+      <p class="say" id="say"></p>
+    </div>
+    <p class="qline" id="question"></p>
+    <div class="canvas" id="canvas"></div>
+    <div class="panel" id="panel"></div>
+    <div id="extra"></div>
+  </div>
+
+  <div class="foot">
+    <div class="btnrow">
+      <button class="b" id="prev">&larr; Back</button>
+      <button class="b" id="next">Next &rarr;</button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var C = {
+  ink:   function(){return cssv('--ink')},
+  ink2:  function(){return cssv('--ink2')},
+  ink3:  function(){return cssv('--ink3')},
+  line:  function(){return cssv('--line')},
+  amber: function(){return cssv('--amber')},
+  amberf:function(){return cssv('--amberfill')},
+  cyan:  function(){return cssv('--cyan')},
+  cyanf: function(){return cssv('--cyanfill')},
+  grid:  function(){return cssv('--grid')},
+  surf:  function(){return cssv('--surface')}
+};
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#888'}
+
+// ---------- tiny svg helpers ----------
+function el(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a){if(a[k]!==null&&a[k]!==undefined)e.setAttribute(k,a[k]);}return e}
+function svgRoot(w,h){var s=el('svg',{viewBox:'0 0 '+w+' '+h,role:'img'});s.style.maxWidth='100%';return s}
+function txt(x,y,s,o){o=o||{};var t=el('text',{x:x,y:y,fill:o.fill||C.ink2(),'font-size':o.size||11,
+  'font-family':o.mono===false?'Archivo, sans-serif':'"IBM Plex Mono", monospace',
+  'text-anchor':o.anchor||'start','font-weight':o.weight||400,'letter-spacing':o.ls||0});t.textContent=s;return t}
+function capBar(s,W,y,text,color,size){
+  size=size||12;
+  var wpx=Math.min(W-16, text.length*size*0.62+30), h=size+16;
+  s.appendChild(el('rect',{x:(W-wpx)/2,y:y-h+5,width:wpx,height:h,rx:4,
+    fill:C.surf(),opacity:0.96,stroke:C.line(),'stroke-width':1}));
+  s.appendChild(txt(W/2,y,text,{size:size,anchor:'middle',fill:color,weight:500}));
+}
+
+function rr(x,y,w,h,r){
+  r=Math.max(0,Math.min(r,Math.min(w,h)/2));
+  return 'M'+(x+r)+','+y+'h'+(w-2*r)+'a'+r+','+r+' 0 0 1 '+r+','+r+'v'+(h-2*r)+
+         'a'+r+','+r+' 0 0 1 '+(-r)+','+r+'h'+(-(w-2*r))+'a'+r+','+r+' 0 0 1 '+(-r)+','+(-r)+
+         'v'+(-(h-2*r))+'a'+r+','+r+' 0 0 1 '+r+','+(-r)+'z';
+}
+
+// ---------- state ----------
+var NLAY = 50;  // the demo part is 50 layers tall, so the caps are reachable with a slider
+var S = { step:0, load:'none', layer:22, walls:0, tb:0, density:20, infillOn:false, fillStage:0, revealed:false, playing:0, pattern:'none', shell:0.8, cut:'across' };
+function zOfLayer(i){ return ((i-0.5)/NLAY)*100; }
+function isCap(i){ i=Math.round(i); return S.tb>0 && (i<=S.tb || i>NLAY-S.tb); }
+
+// ---------- infill generators: same algorithm, different function ----------
+var PATTERNS = {
+  none:      {name:'None',      cross:'\u2014',      note:'none yet'},
+  grid:      {name:'Grid',      cross:'2\u00d7 a cell', note:'drives over its own plastic twice a cell'},
+  triangle:  {name:'Triangle',  cross:'3\u00d7 a cell', note:'three crossings a cell'},
+  honeycomb: {name:'Honeycomb', cross:'never',       note:'never crosses its own path'},
+  gyroid:    {name:'Gyroid',    cross:'never',       note:'never crosses its own path'}
+};
+
+function patternPaths(kind, W, H, sp){
+  var out=[], t, x, y;
+  if(kind==='none'){
+    return out;
+  } else if(kind==='grid'){
+    for(t=-H;t<W+H;t+=sp){ out.push('M'+t+' 0 L'+(t+H)+' '+H); out.push('M'+t+' '+H+' L'+(t+H)+' 0'); }
+  } else if(kind==='triangle'){
+    var dx=H/1.732;
+    for(y=0;y<H+sp;y+=sp) out.push('M0 '+y+' H'+W);
+    for(t=-dx*2;t<W+dx*2;t+=sp*1.15){ out.push('M'+t+' '+H+' L'+(t+dx)+' 0'); out.push('M'+t+' '+H+' L'+(t-dx)+' 0'); }
+  } else if(kind==='honeycomb'){
+    var s=sp*0.62, hw=s*0.866, rowH=s*1.5;
+    var row=0;
+    for(y=-rowH;y<H+rowH*2;y+=rowH){
+      var off=(row%2)?hw:0;
+      for(x=-hw*2+off;x<W+hw*2;x+=hw*2){
+        out.push('M'+x+' '+(y-s)+' L'+(x+hw)+' '+(y-s/2)+' L'+(x+hw)+' '+(y+s/2)+
+                 ' L'+x+' '+(y+s)+' L'+(x-hw)+' '+(y+s/2)+' L'+(x-hw)+' '+(y-s/2)+' Z');
+      }
+      row++;
+    }
+  } else {
+    var wl=sp*2.2, amp=sp*0.42, flip=0;
+    for(y=0;y<H+sp;y+=sp){
+      var d='M0 '+y+' Q'+(wl/4)+' '+(flip?y+amp:y-amp)+' '+(wl/2)+' '+y;
+      for(x=wl/2;x<W+wl;x+=wl/2) d+=' T'+(x+wl/2)+' '+y;
+      out.push(d); flip=1-flip;
+    }
+  }
+  return out;
+}
+
+// ---------- geometry: the vase profile for step 1 ----------
+var PROF=[[0,30],[12,33],[26,30],[42,17],[58,15],[72,22],[86,27],[100,25]];
+function radiusAt(z){
+  if(z<=PROF[0][0])return PROF[0][1];
+  for(var i=1;i<PROF.length;i++){
+    if(z<=PROF[i][0]){
+      var a=PROF[i-1],b=PROF[i],t=(z-a[0])/(b[0]-a[0]);
+      return a[1]+(b[1]-a[1])*t;
+    }
+  }
+  return PROF[PROF.length-1][1];
+}
+
+// ---------- step 1: SLICE + SHELL ----------
+function drawSlice(){
+  var W=720,H=380,s=svgRoot(W,H);
+  var cx=168, y0=320, y1=42, sc=2.35;
+  var lh=(y0-y1)/NLAY;
+  var L=Math.round(S.layer);
+  function zy(z){return y0-(z/100)*(y0-y1);}
+  function sil(shrink){
+    var d='M', z;
+    for(z=0;z<=100;z+=1) d+=(cx-Math.max(1.5,radiusAt(z)-shrink)*sc)+','+zy(z)+' ';
+    for(z=100;z>=0;z-=1) d+=(cx+Math.max(1.5,radiusAt(z)-shrink)*sc)+','+zy(z)+' ';
+    return d+'z';
+  }
+  var outer=sil(0), inner=sil(S.walls*4);   // one wall loop = 0.4 mm = 4 profile units
+
+  s.appendChild(txt(44,26,'THE PART, FROM THE SIDE',{size:10,ls:'.09em',fill:C.ink3()}));
+  s.appendChild(txt(452,26,'THIS ONE LAYER, FROM ABOVE',{size:10,ls:'.09em',fill:C.ink3()}));
+
+  var defs=el('defs',{});
+  var co=el('clipPath',{id:'sil-o'}); co.appendChild(el('path',{d:outer})); defs.appendChild(co);
+  var ci=el('clipPath',{id:'sil-i'}); ci.appendChild(el('path',{d:inner})); defs.appendChild(ci);
+  s.appendChild(defs);
+
+  // every layer carries wall loops around its edge
+  var gO=el('g',{'clip-path':'url(#sil-o)'});
+  gO.appendChild(el('rect',{x:cx-130,y:y1-4,width:260,height:(y0-y1)+8,fill:C.amber(),opacity:0.92}));
+  s.appendChild(gO);
+
+  // the hollow core those loops enclose
+  var gI=el('g',{'clip-path':'url(#sil-i)'});
+  gI.appendChild(el('rect',{x:cx-130,y:y1-4,width:260,height:(y0-y1)+8,fill:C.surf()}));
+  s.appendChild(gI);
+
+  // caps: the first and last few layers go solid, edge to edge
+  var gC=el('g',{'clip-path':'url(#sil-o)'});
+  for(var i=1;i<=NLAY;i++){
+    if(!isCap(i)) continue;
+    gC.appendChild(el('rect',{x:cx-130,y:y0-i*lh,width:260,height:lh+0.4,fill:C.amber()}));
+  }
+  s.appendChild(gC);
+
+  // layer lines
+  var gL=el('g',{'clip-path':'url(#sil-o)',stroke:C.ink(),'stroke-width':0.8,opacity:0.22});
+  for(var j=1;j<NLAY;j++) gL.appendChild(el('line',{x1:cx-130,y1:y0-j*lh,x2:cx+130,y2:y0-j*lh}));
+  s.appendChild(gL);
+
+  s.appendChild(el('path',{d:outer,fill:'none',stroke:C.ink(),'stroke-width':1.7,'stroke-linejoin':'round'}));
+  s.appendChild(el('line',{x1:cx-104,y1:y0+12,x2:cx+104,y2:y0+12,stroke:C.ink2(),'stroke-width':2.4}));
+  s.appendChild(txt(cx-104,y0+29,'build plate',{size:9.5,fill:C.ink3()}));
+
+  // the plane
+  var zc=zOfLayer(L), cy=y0-(L-0.5)*lh, cr=radiusAt(zc)*sc;
+  s.appendChild(el('line',{x1:cx-132,y1:cy,x2:cx+132,y2:cy,stroke:C.cyan(),'stroke-width':2,'stroke-dasharray':'7 4'}));
+  s.appendChild(el('ellipse',{cx:cx,cy:cy,rx:cr,ry:Math.max(2.5,cr*0.18),fill:C.cyanf(),stroke:C.cyan(),'stroke-width':1.8}));
+
+  // right: that layer from above
+  var ox=520, oy=196, osc=2.9, R=radiusAt(zc)*osc, cap=isCap(L);
+  s.appendChild(el('rect',{x:ox-152,y:oy-152,width:304,height:304,fill:'none',stroke:C.line(),'stroke-width':1,rx:3}));
+
+  if(cap){
+    var defs2=el('defs',{}); var cpc=el('clipPath',{id:'capclip'});
+    cpc.appendChild(el('circle',{cx:ox,cy:oy,r:R-1})); defs2.appendChild(cpc); s.appendChild(defs2);
+    var solid=el('g',{'clip-path':'url(#capclip)',stroke:C.amber(),'stroke-width':5.5});
+    for(var yy=oy-Math.ceil(300/7)*7; yy<oy+300; yy+=7) solid.appendChild(el('line',{x1:ox-300,y1:yy,x2:ox+300,y2:yy}));
+    s.appendChild(solid);
+    s.appendChild(el('circle',{cx:ox,cy:oy,r:R,fill:'none',stroke:C.amber(),'stroke-width':3}));
+    s.appendChild(txt(ox,oy+R+30,'a cap layer \u2014 printed solid',{size:11.5,anchor:'middle',fill:C.amber(),weight:500}));
+  } else {
+    var loopGap=Math.min(9,(R-14)/Math.max(1,S.walls));
+    for(var k=0;k<S.walls;k++){
+      s.appendChild(el('circle',{cx:ox,cy:oy,r:R-k*loopGap,fill:'none',stroke:C.amber(),
+        'stroke-width':loopGap*0.7,opacity:1-k*0.07}));
+    }
+    var rin=R-S.walls*loopGap;
+    if(S.infillOn && S.density>0 && rin>6){
+      // the pattern is fixed in space; only the crop changes as the layer grows
+      var spf=Math.max(7, 520/S.density), LEN=260;
+      var start=ox-Math.ceil(300/spf)*spf;
+      var dfi=el('defs',{}); var cfi=el('clipPath',{id:'lyrfill'});
+      cfi.appendChild(el('circle',{cx:ox,cy:oy,r:rin})); dfi.appendChild(cfi); s.appendChild(dfi);
+      var gfi=el('g',{'clip-path':'url(#lyrfill)',stroke:C.cyan(),
+        'stroke-width':2.6,'stroke-linecap':'round'});
+      for(var tf=start; tf<ox+300; tf+=spf){
+        gfi.appendChild(el('line',{x1:tf-LEN,y1:oy-LEN,x2:tf+LEN,y2:oy+LEN}));
+        gfi.appendChild(el('line',{x1:tf-LEN,y1:oy+LEN,x2:tf+LEN,y2:oy-LEN}));
+      }
+      s.appendChild(gfi);
+    }
+    s.appendChild(el('circle',{cx:ox,cy:oy,r:Math.max(4,rin),fill:'none',stroke:C.line(),
+      'stroke-width':1.3,'stroke-dasharray':'7 6'}));
+    if(S.density===0) s.appendChild(txt(ox,oy+5,'empty',{size:12,anchor:'middle',fill:C.ink3(),ls:'.06em'}));
+    s.appendChild(txt(ox,oy+R+30,S.walls===0 ? 'just the outline, no walls yet'
+      : S.walls+' loop'+(S.walls===1?'':'s')+(S.infillOn?' + '+S.density+'% infill'+(S.density===20?'  \u2014 the usual default':''):', middle still open'),
+      {size:11.5,anchor:'middle',fill:C.amber(),weight:500}));
+  }
+
+  s.appendChild(txt(44,H-14,'layer '+L+' of '+NLAY+'   ·   0.2 mm each   ·   drag the plane into the caps and watch this change',
+    {size:10.5,fill:C.ink3()}));
+  return s;
+}
+
+// ---------- shared: a single layer cross-section (rounded rect) ----------
+var LW=250, LH=168, LR=26; // layer box in svg units
+function layerOrigin(w,h){return {x:(w-LW)/2, y:(h-LH)/2}}
+
+function wallPaths(ox,oy,loops,step){
+  var out=[];
+  for(var i=0;i<loops;i++){
+    var k=i*step+step/2;
+    out.push(rr(ox+k,oy+k,LW-2*k,LH-2*k,Math.max(2,LR-k)));
+  }
+  return out;
+}
+
+// ---------- step 2: SHELL (one cut-through, walls and caps in one picture) ----------
+function drawShell(){
+  var W=720,H=300,s=svgRoot(W,H);
+  var bw=620, bh=186, x0=(W-bw)/2, y0=52, pxmm=bw/20;
+  var wall=Math.min(S.walls*0.4*pxmm, bw/2-24);
+  var skin=Math.min(S.tb*0.2*pxmm, bh/2-14);
+
+  s.appendChild(txt(x0,32,'THE PART, CUT THROUGH · EVERY BEAD THE NOZZLE LAYS DOWN',{size:10,ls:'.09em',fill:C.ink3()}));
+
+  var bW=0.4*pxmm, bH=0.2*pxmm;   // one extrusion: 0.4 mm wide, 0.2 mm tall
+  var defs=el('defs',{});
+  var pat=el('pattern',{id:'bead',width:bW,height:bH,patternUnits:'userSpaceOnUse',
+    patternTransform:'translate('+x0+','+y0+')'});
+  pat.appendChild(el('rect',{x:0.8,y:0.5,width:bW-1.6,height:bH-1,rx:Math.min(2.6,(bH-1)/2),fill:C.amber()}));
+  defs.appendChild(pat);
+  s.appendChild(defs);
+
+  // the void inside the part
+  s.appendChild(el('rect',{x:x0,y:y0,width:bw,height:bh,fill:C.surf()}));
+
+  // shell, drawn bead by bead
+  var bands=[[x0,y0,bw,skin],[x0,y0+bh-skin,bw,skin],[x0,y0,wall,bh],[x0+bw-wall,y0,wall,bh]];
+  for(var b=0;b<bands.length;b++){
+    s.appendChild(el('rect',{x:bands[b][0],y:bands[b][1],width:bands[b][2],height:bands[b][3],
+      fill:C.amber(),opacity:0.14}));
+    s.appendChild(el('rect',{x:bands[b][0],y:bands[b][1],width:bands[b][2],height:bands[b][3],
+      fill:'url(#bead)'}));
+  }
+
+  s.appendChild(el('rect',{x:x0+wall,y:y0+skin,width:bw-2*wall,height:bh-2*skin,
+    fill:'none',stroke:C.line(),'stroke-width':1.4,'stroke-dasharray':'7 6'}));
+  s.appendChild(txt((x0+bw/2),(y0+bh/2)+4,'still empty',{size:12,anchor:'middle',fill:C.ink3(),ls:'.06em'}));
+  s.appendChild(el('rect',{x:x0,y:y0,width:bw,height:bh,fill:'none',stroke:C.ink(),'stroke-width':1.6}));
+
+  s.appendChild(txt(x0,y0+bh+26,S.walls+' wall loop'+(S.walls===1?'':'s')+' each side  ·  '+(S.walls*0.4).toFixed(1)+' mm',
+    {size:11,fill:C.amber(),weight:500}));
+  s.appendChild(txt(x0+bw,y0+bh+26,S.tb+' layer'+(S.tb===1?'':'s')+' top and bottom  ·  '+(S.tb*0.2).toFixed(1)+' mm',
+    {size:11,anchor:'end',fill:C.amber(),weight:500}));
+  s.appendChild(txt(x0,y0-10,'50 beads across · 30 layers tall',{size:10,fill:C.ink3()}));
+  s.appendChild(txt(W/2,H-10,'Orange is the shell. The top and bottom are the ones that decide the bet.',
+    {size:11.5,anchor:'middle',fill:C.cyan(),weight:500}));
+  return s;
+}
+
+// ---------- step 3: FILL ----------
+function drawFill(){
+  var W=720,H=364,s=svgRoot(W,H);
+  var ox=(W-LW*1.5)/2, oy=42, sx=1.5;
+  var w=LW*sx, h=LH*sx, r=LR*sx;
+  var step=7*sx, k=S.walls*step;
+  var spacing = Math.max(2.6, 440/S.density);
+
+  var defs=el('defs',{});
+  var cp=el('clipPath',{id:'fillclip'});
+  cp.appendChild(el('path',{d:rr(ox+k,oy+k,w-2*k,h-2*k,Math.max(3,r-k))}));
+  defs.appendChild(cp); s.appendChild(defs);
+
+  // pattern group
+  var g=el('g',{});
+  if(S.density>0 && S.pattern!=='none'){
+    var lines=el('g',{fill:'none',stroke:C.cyan(),'stroke-width':2.4,'stroke-linejoin':'round'});
+    var ds=patternPaths(S.pattern, W, H, spacing*sx);
+    for(var pi=0;pi<ds.length;pi++) lines.appendChild(el('path',{d:ds[pi]}));
+    if(S.fillStage===0){ lines.setAttribute('opacity','.5'); }
+    else { lines.setAttribute('clip-path','url(#fillclip)'); }
+    g.appendChild(lines);
+  }
+  s.appendChild(g);
+
+  // outline + walls on top
+  s.appendChild(el('path',{d:rr(ox,oy,w,h,r),fill:'none',stroke:C.ink(),'stroke-width':S.fillStage===0?1.4:1.8,
+    'stroke-dasharray':S.fillStage===0?'6 4':null}));
+  if(S.fillStage>=1){
+    for(var i=0;i<S.walls;i++){
+      var kk=i*step+step/2;
+      s.appendChild(el('path',{d:rr(ox+kk,oy+kk,w-2*kk,h-2*kk,Math.max(3,r-kk)),
+        fill:'none',stroke:C.amber(),'stroke-width':3.6,'stroke-linejoin':'round',opacity:.95}));
+    }
+  }
+
+  var cap = S.pattern==='none' ? 'No generator picked. Choose one and the same two steps run again.'
+          : S.density===0 ? 'Density is zero, so there is nothing to draw yet.'
+          : S.fillStage===0 ? 'Step one: draw the pattern across the whole page. It has no idea where your part is.'
+          : 'Step two: crop it to the part. Swap the generator and nothing about this step changes.';
+  capBar(s,W,H-14,cap,S.fillStage===1&&S.pattern!=='none'?C.amber():C.ink2(),12);
+  return s;
+}
+
+// ---------- the specimen: a 6 x 6 mm rod, 100 mm long, printed lying flat ----------
+var ROD=6, SOLID_A=ROD*ROD, SOLID_I=ROD*Math.pow(ROD,3)/12;
+
+function barStats(shellMM, density){
+  var N=180, ds=ROD/N, dA=ds*ds, area=0, I=0, core=0, i, j, x, y, w;
+  for(i=0;i<N;i++){
+    x=-ROD/2+(i+0.5)*ds;
+    for(j=0;j<N;j++){
+      y=-ROD/2+(j+0.5)*ds;
+      w=(Math.abs(x)>ROD/2-shellMM || Math.abs(y)>ROD/2-shellMM) ? 1 : density;
+      area+=w*dA; I+=w*y*y*dA;
+      if(Math.abs(y)<ROD/4) core+=w*dA;
+    }
+  }
+  return {area:area, I:I, core:core};
+}
+
+// the rod standing on the plate the way it prints, with the cut marked
+function printStance(s,x,y,pm,cutAcross){
+  var w=ROD*pm, h=100*pm, i;
+  s.appendChild(txt(x-16,y-16,'HOW IT PRINTS',{size:9,ls:'.08em',fill:C.ink3()}));
+  s.appendChild(el('rect',{x:x,y:y,width:w,height:h,fill:C.surf()}));
+  var g=el('g',{stroke:C.ink(),'stroke-width':0.6,opacity:0.3});
+  for(i=2;i<100;i+=2) g.appendChild(el('line',{x1:x,y1:y+i*pm,x2:x+w,y2:y+i*pm}));
+  s.appendChild(g);
+  s.appendChild(el('rect',{x:x,y:y,width:w,height:h,fill:'none',stroke:C.ink2(),'stroke-width':1.4}));
+  s.appendChild(el('line',{x1:x-22,y1:y+h+6,x2:x+w+22,y2:y+h+6,stroke:C.ink2(),'stroke-width':2.6}));
+  s.appendChild(txt(x-16,y+h+22,'build plate',{size:9,fill:C.ink3()}));
+  s.appendChild(txt(x-16,y+h+35,'100 mm tall',{size:9,fill:C.ink3()}));
+  if(cutAcross) s.appendChild(el('line',{x1:x-18,y1:y+h*0.45,x2:x+w+18,y2:y+h*0.45,stroke:C.cyan(),'stroke-width':2.4,'stroke-dasharray':'5 4'}));
+  else s.appendChild(el('line',{x1:x+w*0.5,y1:y-10,x2:x+w*0.5,y2:y+h+10,stroke:C.cyan(),'stroke-width':2.4,'stroke-dasharray':'5 4'}));
+}
+
+// one layer of the rod: wall loops, then infill inside them
+function drawLayerFace(s,shellMM,dens,x0,y0,side,mode){
+  var pxmm=side/ROD, lw=0.4*pxmm, loops=Math.max(0,Math.round(shellMM/0.4));
+  var ins=Math.min(loops*lw, side/2-3);
+  var id='lf'+Math.round(x0)+'_'+Math.round(y0)+'_'+Math.round(side);
+  s.appendChild(el('rect',{x:x0,y:y0,width:side,height:side,fill:C.surf()}));
+  if(dens>0 && side-2*ins>4){
+    var d=el('defs',{}); var c=el('clipPath',{id:id});
+    c.appendChild(el('rect',{x:x0+ins,y:y0+ins,width:side-2*ins,height:side-2*ins}));
+    d.appendChild(c); s.appendChild(d);
+    var sp=Math.max(7,(0.4/dens)*pxmm), tt, inner=side-2*ins;
+    if(inner>12) sp=Math.min(sp, inner/1.7);
+    var g=el('g',{'clip-path':'url(#'+id+')',stroke:C.cyan(),'stroke-width':Math.max(2,Math.min(5,lw*0.8))});
+    for(tt=x0-side;tt<x0+2*side;tt+=sp){
+      g.appendChild(el('line',{x1:tt,y1:y0,x2:tt+side,y2:y0+side}));
+      g.appendChild(el('line',{x1:tt,y1:y0+side,x2:tt+side,y2:y0}));
+    }
+    s.appendChild(g);
+  }
+  var k,o;
+  for(k=0;k<loops;k++){
+    o=(k+0.5)*lw;
+    if(side-2*o<=2) break;
+    s.appendChild(el('rect',{x:x0+o,y:y0+o,width:side-2*o,height:side-2*o,
+      fill:'none',stroke:C.amber(),'stroke-width':lw}));
+  }
+  if(mode==='bend'||mode==='push'){
+    s.appendChild(el('rect',{x:x0,y:y0+side*0.26,width:side,height:side*0.48,fill:C.surf(),opacity:0.7}));
+  } else if(mode==='squash'){
+    s.appendChild(el('rect',{x:x0,y:y0,width:side,height:ins+1,fill:C.surf(),opacity:0.7}));
+    s.appendChild(el('rect',{x:x0,y:y0+side-ins-1,width:side,height:ins+1,fill:C.surf(),opacity:0.7}));
+  }
+  s.appendChild(el('rect',{x:x0,y:y0,width:side,height:side,fill:'none',stroke:C.ink(),'stroke-width':1.5}));
+  return loops;
+}
+function loadGlyph(s,x0,y0,side,load){
+  if(load==='none') return;
+  var cx=x0+side/2, cy=y0+side/2, col=C.cyan(), halo=cssv('--bg')||'#0F1319';
+  function stroke(d,w){
+    s.appendChild(el('path',{d:d,fill:'none',stroke:halo,'stroke-width':w+4.5,'stroke-linecap':'round','stroke-linejoin':'round'}));
+    s.appendChild(el('path',{d:d,fill:'none',stroke:col,'stroke-width':w,'stroke-linecap':'round','stroke-linejoin':'round'}));
+  }
+  function head(x,y,dy){
+    var d='M'+(x-8)+' '+(y-dy)+' L'+x+' '+y+' L'+(x+8)+' '+(y-dy)+' Z';
+    s.appendChild(el('path',{d:d,fill:halo,stroke:halo,'stroke-width':4.5,'stroke-linejoin':'round'}));
+    s.appendChild(el('path',{d:d,fill:col}));
+  }
+  function arrowV(x,yTail,yTip){ stroke('M'+x+' '+yTail+' L'+x+' '+yTip,3.4); head(x,yTip,(yTip>yTail?9:-9)); }
+
+  if(load==='pull'||load==='push'){
+    s.appendChild(el('circle',{cx:cx,cy:cy,r:21,fill:halo,opacity:0.86}));
+    s.appendChild(el('circle',{cx:cx,cy:cy,r:19,fill:'none',stroke:col,'stroke-width':3.2}));
+    if(load==='pull'){
+      s.appendChild(el('circle',{cx:cx,cy:cy,r:5.4,fill:col}));
+    } else {
+      stroke('M'+(cx-9)+' '+(cy-9)+' L'+(cx+9)+' '+(cy+9),3.2);
+      stroke('M'+(cx+9)+' '+(cy-9)+' L'+(cx-9)+' '+(cy+9),3.2);
+    }
+    s.appendChild(txt(cx,y0+side-9, load==='pull'?'pulling out of the page':'pushing into the page',
+      {size:9,anchor:'middle',fill:col}));
+  } else if(load==='squash'){
+    arrowV(cx-34,y0+10,y0+34); arrowV(cx,y0+10,y0+34); arrowV(cx+34,y0+10,y0+34);
+    arrowV(cx-34,y0+side-10,y0+side-34); arrowV(cx,y0+side-10,y0+side-34); arrowV(cx+34,y0+side-10,y0+side-34);
+  } else {
+    arrowV(cx,y0+8,y0+40);
+    stroke('M'+(x0+16)+' '+(y0+side-14)+' L'+(x0+side-16)+' '+(y0+side-14),3);
+    s.appendChild(el('path',{d:'M'+(x0+22)+' '+(y0+side-13)+' l-7 12 h14 z',fill:col}));
+    s.appendChild(el('path',{d:'M'+(x0+side-22)+' '+(y0+side-13)+' l-7 12 h14 z',fill:col}));
+  }
+}
+
+function drawSection(s,cfg,x0,y0,side,stats,mode){
+  drawLayerFace(s,cfg.shell,cfg.dens,x0,y0,side,mode);
+  loadGlyph(s,x0,y0,side,S.load);
+  s.appendChild(txt(x0+side/2,y0+side+18,'one layer, 6 × 6 mm',{size:9.5,anchor:'middle',fill:C.ink3()}));
+}
+
+// ---------- step 3: COST ----------
+function drawCost(){
+  var across = S.cut!=='along';
+  var W=720, H=392, s=svgRoot(W,H);
+  var PM=2.3, PX=70, PY=58;
+
+  s.appendChild(txt(28,26, across ? 'CUT ACROSS THE ROD — ONE LAYER, 6 × 6 mm'
+                                  : 'CUT DOWN THE ROD — THE LAYERS, SIDE ON',
+    {size:10,ls:'.09em',fill:C.ink3()}));
+  printStance(s,PX,PY,PM,across);
+
+  if(across){
+    var side=208, x0=330, y0=76;
+    drawLayerFace(s,S.shell,S.density/100,x0,y0,side,'none');
+    s.appendChild(txt(x0+side/2,y0+side+20,'this is what the printer draws, 500 times',
+      {size:9.5,anchor:'middle',fill:C.ink3()}));
+  } else {
+    var ww=96, hh=230, bx=372, by=62, pxm=ww/ROD;
+    var sh=Math.min(S.shell*pxm, ww/2-3);
+    s.appendChild(el('rect',{x:bx,y:by,width:ww,height:hh,fill:C.surf()}));
+    if(S.density>0 && ww-2*sh>3){
+      var dd=el('defs',{}); var cc=el('clipPath',{id:'sideCut'});
+      cc.appendChild(el('rect',{x:bx+sh,y:by,width:ww-2*sh,height:hh}));
+      dd.appendChild(cc); s.appendChild(dd);
+      var rowH=Math.max(3,0.2*pxm*2), gap=Math.max(7,(0.4/(S.density/100))*pxm*1.414), row=0, yy;
+      var gi=el('g',{'clip-path':'url(#sideCut)',stroke:C.cyan(),'stroke-width':Math.min(3,rowH*0.7),'stroke-linecap':'round'});
+      for(yy=by+rowH/2; yy<by+hh; yy+=rowH){
+        gi.appendChild(el('line',{x1:bx+sh,y1:yy,x2:bx+ww-sh,y2:yy,
+          'stroke-dasharray':'0.8 '+(gap-0.8).toFixed(1),'stroke-dashoffset':(row%2?gap/2:0).toFixed(1)}));
+        row++;
+      }
+      s.appendChild(gi);
+    }
+    s.appendChild(el('rect',{x:bx,y:by,width:sh,height:hh,fill:C.amber()}));
+    s.appendChild(el('rect',{x:bx+ww-sh,y:by,width:sh,height:hh,fill:C.amber()}));
+    var gl=el('g',{stroke:C.ink(),'stroke-width':0.7,opacity:0.18}), ly;
+    for(ly=by+6; ly<by+hh; ly+=6) gl.appendChild(el('line',{x1:bx,y1:ly,x2:bx+ww,y2:ly}));
+    s.appendChild(gl);
+    s.appendChild(el('rect',{x:bx,y:by,width:ww,height:hh,fill:'none',stroke:C.ink(),'stroke-width':1.5}));
+    s.appendChild(txt(bx+ww/2,by+hh+20,'walls run the whole height',{size:9.5,anchor:'middle',fill:C.ink3()}));
+  }
+
+  s.appendChild(txt(28,H-44,S.shell.toFixed(1)+' mm shell · '+Math.round(S.shell/0.4)+' wall loops',{size:11.5,fill:C.amber(),weight:500}));
+  s.appendChild(txt(W-28,H-44,S.density+'% infill',{size:11.5,anchor:'end',fill:C.cyan(),weight:500}));
+  capBar(s,W,H-30, across ? 'Printed upright, every layer is this. Shell means wall loops.'
+                          : 'Solid layers only at the two ends, where they carry nothing.',
+    C.ink2(),11.5);
+  return s;
+}
+
+function costFigures(){
+  var st=barStats(S.shell,S.density/100);
+  var plastic=st.area/SOLID_A, stiff=st.I/SOLID_I;
+  return {plastic:plastic, stiff:stiff, per: plastic>0.02 ? stiff/plastic : 0};
+}
+
+// ---------- step 4: THE BET ----------
+var BAR_A={label:'Bar A',nick:'thin shell',shell:0.4,dens:0.57};
+var BAR_B={label:'Bar B',nick:'thick shell',shell:1.2,dens:0.10};
+
+var LOADS={
+  none:  {name:'No load',   metric:'area', unit:'mm\u00b2', pre:'Nothing acting on it yet. Same length, same section, same weight.',
+          cap:'Nothing acting on it yet. Same length, same section, same weight.'},
+  pull:  {name:'Pull it',   metric:'area', unit:'mm\u00b2', pre:'Pulling from both ends.',
+          cap:'Pulling only asks how much material there is. Same weight, same answer.'},
+  push:  {name:'Push it',   metric:'I',    unit:'mm\u2074', pre:'Pushing in from both ends.',
+          cap:'A 100 mm rod does not squash, it buckles sideways \u2014 and that cares where the material is.'},
+  bend:  {name:'Bend it',   metric:'I',    unit:'mm\u2074', pre:'Pressed down in the middle, held at both ends.',
+          cap:'The surfaces do the work. The middle is along for the ride.'},
+  squash:{name:'Squash it', metric:'core', unit:'mm\u00b2', pre:'Squeezed from top and bottom, across the middle.',
+          cap:'Squash it across the middle and the infill is the only thing holding the faces apart.'}
+};
+function loadVal(st){ var m=LOADS[S.load].metric; return m==='area'?st.area:(m==='I'?st.I:st.core); }
+
+function loadArrowsRod(s,x,cy,L,th,load){
+  if(load==='none') return;
+  var col=C.cyan(), i, xx, mid=x+L/2, top=cy-th/2, bot=cy+th/2;
+  function head(px,py,dx,dy){
+    s.appendChild(el('path',{d:'M'+(px-dx*9-dy*7)+' '+(py-dy*9-dx*7)+' L'+px+' '+py+
+      ' L'+(px-dx*9+dy*7)+' '+(py-dy*9+dx*7)+' Z',fill:col}));
+  }
+  function shaft(x1,y1,x2,y2){ s.appendChild(el('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col,'stroke-width':3.2,'stroke-linecap':'round'})); }
+  if(load==='pull'||load==='push'){
+    var out=(load==='pull');
+    [[x,-1],[x+L,1]].forEach(function(e){
+      var ex=e[0], dir=e[1]*(out?1:-1), tip=ex+dir*28, tail=ex+dir*5;
+      shaft(tail,cy,tip,cy); head(tip,cy,dir,0);
+    });
+  } else if(load==='bend'){
+    shaft(mid,top-30,mid,top-8); head(mid,top-4,0,1);
+    s.appendChild(el('path',{d:'M'+(x+10)+' '+(bot+3)+' l-9 15 h18 z',fill:C.ink3()}));
+    s.appendChild(el('path',{d:'M'+(x+L-10)+' '+(bot+3)+' l-9 15 h18 z',fill:C.ink3()}));
+  } else {
+    for(i=-1;i<=1;i++){
+      xx=mid+i*34;
+      shaft(xx,top-30,xx,top-10); head(xx,top-4,0,1);
+      shaft(xx,bot+30,xx,bot+10); head(xx,bot+4,0,-1);
+    }
+  }
+}
+
+// the rod in side view, deformed by d pixels under the chosen load
+function deformedRod(s,x,cy,L,th,load,d,col){
+  var N=44, i, tt, up=[], dn=[], px, hy, cyy, len=L, x0=x;
+  if(load==='pull'){ len=L+d*1.1; x0=x-d*0.55; }
+  for(i=0;i<=N;i++){
+    tt=i/N; px=x0+tt*len;
+    cyy=cy; hy=th/2;
+    if(load==='bend')      cyy = cy + d*4*tt*(1-tt);
+    else if(load==='push') cyy = cy - d*Math.sin(Math.PI*tt);
+    else if(load==='squash') hy = th/2 - d*0.42*4*tt*(1-tt);
+    else if(load==='pull') hy = th/2 - d*0.06;
+    up.push(px.toFixed(1)+' '+(cyy-hy).toFixed(1));
+    dn.unshift(px.toFixed(1)+' '+(cyy+hy).toFixed(1));
+  }
+  s.appendChild(el('path',{d:'M'+up.join(' L')+' L'+dn.join(' L')+' Z',
+    fill:C.surf(),stroke:C.ink(),'stroke-width':1.6,'stroke-linejoin':'round'}));
+  s.appendChild(el('path',{d:'M'+up.join(' L'),fill:'none',stroke:col,'stroke-width':4.5,'stroke-linecap':'round'}));
+  s.appendChild(el('path',{d:'M'+dn.slice().reverse().join(' L'),fill:'none',stroke:col,'stroke-width':4.5,'stroke-linecap':'round'}));
+  return {x:x0,len:len};
+}
+
+var VERB={
+  bend:  {w:'bends {n}% less',  l:'bends more'},
+  push:  {w:'takes {n}% more before it bows', l:'bows first'},
+  squash:{w:'squashes {n}% less', l:'squashes more'},
+  pull:  {w:'exactly the same',   l:'exactly the same'}
+};
+
+function drawBet(){
+  var W=720,H=438,s=svgRoot(W,H);
+  var sa=barStats(BAR_A.shell,BAR_A.dens), sb=barStats(BAR_B.shell,BAR_B.dens);
+  var vA=loadVal(sa), vB=loadVal(sb), tie=Math.abs(vB/vA-1)<0.03;
+  var shown=S.revealed && S.load!=='none';
+  var minV=Math.min(vA,vB), DMAX=27;
+  var dA = shown ? DMAX*(minV/vA) : 0;
+  var dB = shown ? DMAX*(minV/vB) : 0;
+  var pct = Math.round((Math.max(vA,vB)/Math.min(vA,vB)-1)*100);
+
+  s.appendChild(txt(W/2,18,'SAME LENGTH · SAME SECTION · SAME WEIGHT',
+    {size:10.5,anchor:'middle',ls:'.09em',fill:C.ink3()}));
+  s.appendChild(txt(28,44,S.load==='none'?'PICK A LOAD':LOADS[S.load].name.toUpperCase(),
+    {size:10.5,ls:'.08em',fill:S.load==='none'?C.ink3():C.cyan()}));
+
+  var SEC=112, SX=132, RX=312, RL=368, RT=26;
+  [[BAR_A,sa,134,dA,C.amber()],[BAR_B,sb,300,dB,C.cyan()]].forEach(function(e){
+    var cfg=e[0], st=e[1], cy=e[2], d=e[3], col=e[4];
+    s.appendChild(txt(28,cy-10,cfg.label,{size:16,fill:C.ink(),weight:700,mono:false}));
+    s.appendChild(txt(28,cy+8,Math.round(cfg.shell/0.4)+(Math.round(cfg.shell/0.4)===1?' loop':' loops'),{size:10,fill:C.ink3()}));
+    s.appendChild(txt(28,cy+22,Math.round(cfg.dens*100)+'% infill',{size:10,fill:C.ink3()}));
+    drawLayerFace(s,cfg.shell,cfg.dens,SX,cy-SEC/2,SEC,'none');
+    s.appendChild(txt(SX+SEC/2,cy+SEC/2+15,'one layer, 6 × 6 mm',{size:9,anchor:'middle',fill:C.ink3()}));
+    deformedRod(s,RX,cy,RL,RT,S.load,d,col);
+    loadArrowsRod(s,RX,cy,RL,RT,S.load);
+  });
+
+  if(shown){
+    var better = (vA>vB) ? 'A' : 'B';
+    [['A',134,vA,C.amber()],['B',300,vB,C.cyan()]].forEach(function(e){
+      var key=e[0], cy=e[1], v=e[2], wc=e[3];
+      var win=(v===Math.max(vA,vB));
+      var words = tie||S.load==='pull' ? 'exactly the same'
+                : (win ? VERB[S.load].w.replace('{n}',pct) : VERB[S.load].l);
+      s.appendChild(txt(RX+RL/2,cy+58,words,
+        {size:13,anchor:'middle',fill:(!tie&&win)?wc:C.ink2(),weight:500,mono:false}));
+    });
+    capBar(s,W,H-30,LOADS[S.load].cap,C.cyan(),11.5);
+  } else {
+    capBar(s,W,H-30,LOADS[S.load].pre,C.ink2(),11.5);
+  }
+  return s;
+}
+
+// ---------- steps ----------
+var STEPS=[
+ {n:'01',t:'Slice & Shell',
+  eyebrow:'Pass 1 \u2014 geometry in',
+  title:'A printer cannot make a shape',
+  q:'So what does it <em>actually draw</em> on one layer?',
+  say:'It can only draw flat. Software cuts the model into layers, then decides what to put inside each one: loops around the edge, and solid caps at the very top and bottom.',
+  draw:drawSlice,
+  panel:function(){
+    var p=[{type:'range',id:'layer',label:'Layer',min:1,max:NLAY,step:1,get:function(){return S.layer},
+            set:function(v){S.layer=v},fmt:function(v){return Math.round(v)+' of '+NLAY}},
+           {type:'range',id:'walls',label:'Wall loops',min:0,max:6,step:1,get:function(){return S.walls},
+            set:function(v){S.walls=v},fmt:function(v){return v}},
+           {type:'range',id:'tb',label:'Solid top / bottom',min:0,max:10,step:1,get:function(){return S.tb},
+            set:function(v){S.tb=v},fmt:function(v){return v+' + '+v}}];
+    if(S.infillOn){
+      p.push({type:'range',id:'density',label:'Infill density',min:0,max:100,step:5,get:function(){return S.density},
+              set:function(v){S.density=v},fmt:function(v){return v+'%'}});
+    } else {
+      p.push({type:'button',id:'addfill',label:'+ Add infill'});
+    }
+    p.push({type:'button',id:'play',label:'Sweep'});
+    return p;
+  },
+  reads:function(){return [
+    {k:'This layer is',v:isCap(S.layer)?'solid':(S.walls?'loops':'open'),
+     s:isCap(S.layer)?'a cap':(S.walls?'+ a hole':'no walls yet'),cls:'hot'},
+    {k:'Outline width',v:(radiusAt(zOfLayer(Math.round(S.layer)))*2).toFixed(1),s:'mm'},
+    {k:'Infill',v:S.infillOn?S.density+'%':'none',s:(S.infillOn&&S.density===20)?'typical':'',cls:'cool'}
+  ]}},
+
+ {n:'02',t:'Fill',
+  eyebrow:'Pass 2 \u2014 the lazy one',
+  title:'Draw lines everywhere, then crop',
+  q:'How does it decide what goes in the <em>middle</em>?',
+  say:'The slicer draws the pattern across the entire plane, ignoring your part completely, then intersects the two. Swapping the pattern changes the generating function, not the algorithm.',
+  draw:drawFill,
+  panel:[{type:'buttons',id:'stage',label:'Step through',opts:['Lines everywhere','Crop to part']},
+         {type:'pbuttons',id:'pattern',label:'Pick a generator'},
+         {type:'range',id:'density',label:'Density',min:0,max:100,step:5,get:function(){return S.density},
+          set:function(v){S.density=v},fmt:function(v){return v+'%'}}],
+  reads:function(){return [
+    {k:'Pattern',v:PATTERNS[S.pattern].name,s:'',cls:'hot'},
+    {k:'Self-crossings',v:PATTERNS[S.pattern].cross,s:'',cls:'cool'},
+    {k:'Line spacing',v:S.pattern==='none'?'\u2014':(0.4/(S.density/100)).toFixed(1),s:S.pattern==='none'?'':'mm'}
+  ]}},
+
+ {n:'03',t:'Cost',
+  eyebrow:'What it costs you',
+  title:'Where you spend the plastic',
+  q:'One bar of plastic. <em>Where should it go?</em>',
+  say:'Shell or infill. Both cost the same plastic. The third bar is what you get back per gram, and the two levers are not equal.',
+  draw:drawCost,
+  panel:[{type:'toggle',id:'cut',label:'Where you cut it',
+          opts:[['across','Across the bar'],['along','Along the bar']],
+          get:function(){return S.cut},set:function(v){S.cut=v}},
+         {type:'range',id:'shell',label:'Shell thickness',min:0,max:2,step:0.2,get:function(){return S.shell},
+          set:function(v){S.shell=v},fmt:function(v){return v.toFixed(1)+' mm'}},
+         {type:'range',id:'density',label:'Infill density',min:0,max:100,step:5,get:function(){return S.density},
+          set:function(v){S.density=v},fmt:function(v){return v+'%'}}],
+  meters:function(){
+    var f=costFigures();
+    return [
+      {l:'Plastic used',v:Math.round(f.plastic*100)+'%',pct:f.plastic*100},
+      {l:'Bending stiffness',v:Math.round(f.stiff*100)+'%',pct:f.stiff*100,c2:true},
+      {l:'Stiffness per gram',v:f.per.toFixed(2)+'\u00d7',pct:Math.max(0,Math.min(100,(f.per-1)*140))}
+    ];
+  },
+  reads:function(){
+    var f=costFigures();
+    return [
+      {k:'Plastic',v:Math.round(f.plastic*100),s:'% of solid'},
+      {k:'Stiffness',v:Math.round(f.stiff*100),s:'% of solid',cls:'cool'},
+      {k:'Per gram',v:f.per.toFixed(2),s:'\u00d7 solid',cls:'hot'}
+    ];
+  }},
+
+ {n:'04',t:'Load',
+  eyebrow:'The question',
+  title:'Same weight. One is nearly hollow.',
+  q:function(){
+    if(S.load==='none') return 'These weigh the same. <em>Pick a load and find out.</em>';
+    var m={pull:'harder to <em>pull apart</em>?',push:'harder to <em>crush end to end</em>?',
+           bend:'harder to <em>bend</em>?',squash:'harder to <em>squash flat</em>?'};
+    return 'These weigh the same. Which one is '+m[S.load];
+  },
+  say:'Bar A has a thin shell and 57% infill. Bar B has a thick shell and 10% infill. Same plastic, different places. The winner changes with the load.',
+  draw:drawBet,
+  panel:[{type:'button',id:'reveal',label:'Reveal the answer'},
+         {type:'toggle',id:'load',label:'Load case',
+          opts:[['none','No load'],['pull','Pull it'],['push','Push it'],['bend','Bend it'],['squash','Squash it']],
+          get:function(){return S.load},
+          set:function(v){ if(v!==S.load){ S.load=v; S.revealed=false; } }}],
+  reads:function(){
+    var sa=barStats(BAR_A.shell,BAR_A.dens), sb=barStats(BAR_B.shell,BAR_B.dens);
+    if(!S.revealed) return [
+      {k:'Bar A plastic',v:sa.area.toFixed(1),s:'mm\u00b2'},
+      {k:'Bar B plastic',v:sb.area.toFixed(1),s:'mm\u00b2'},
+      {k:'Apart by',v:Math.abs(sa.area-sb.area).toFixed(2),s:'mm\u00b2',cls:'cool'}
+    ];
+    var vA=loadVal(sa), vB=loadVal(sb), u=LOADS[S.load].unit;
+    var tie=Math.abs(vB/vA-1)<0.03;
+    return [
+      {k:'Bar A',v:vA.toFixed(1),s:u},
+      {k:'Bar B',v:vB.toFixed(1),s:u,cls:tie?'':'cool'},
+      {k:'Winner',v:tie?'tie':(vB>vA?'Bar B':'Bar A'),
+       s:tie?'identical':'by '+Math.round((Math.max(vA,vB)/Math.min(vA,vB)-1)*100)+'%',
+       cls:tie?'':(vB>vA?'cool':'hot')}
+    ];
+  }}
+];
+
+
+// ---------- render ----------
+var rail=document.getElementById('rail');
+STEPS.forEach(function(st,i){
+  var b=document.createElement('button');
+  b.className='step'; b.type='button'; b.setAttribute('role','tab');
+  b.innerHTML='<span class="n">'+st.n+'</span><span class="t"></span>';
+  b.querySelector('.t').textContent=st.t;
+  b.addEventListener('click',function(){go(i)});
+  rail.appendChild(b);
+});
+
+var panelCtls=[];
+function refresh(){ render(false); }
+function render(rebuild){
+  if(rebuild===undefined) rebuild=true;
+  var st=STEPS[S.step];
+  Array.prototype.forEach.call(rail.children,function(c,i){
+    c.setAttribute('aria-current', i===S.step ? 'true':'false');
+  });
+  document.getElementById('eyebrow').textContent=st.eyebrow;
+  document.getElementById('title').textContent=st.title;
+  document.getElementById('say').textContent=st.say;
+  var qEl=document.getElementById('question');
+  var qTxt=typeof st.q==='function'?st.q():st.q;
+  qEl.innerHTML=qTxt||''; qEl.hidden=!qTxt;
+
+  var cv=document.getElementById('canvas'); cv.innerHTML=''; cv.appendChild(st.draw());
+
+  // panel: rebuilt only on step or button change, never mid-drag
+  if(rebuild){
+  panelCtls=[];
+  var p=document.getElementById('panel'); p.innerHTML='';
+  var panelDefs = typeof st.panel==='function' ? st.panel() : (st.panel||[]);
+  panelDefs.forEach(function(c){
+    if(c.type==='range'){
+      var d=document.createElement('div'); d.className='ctl';
+      var l=document.createElement('label'); l.setAttribute('for','c_'+c.id);
+      l.innerHTML='<span></span><b></b>';
+      l.firstChild.textContent=c.label; l.lastChild.textContent=c.fmt(c.get());
+      var r=document.createElement('input');
+      r.type='range'; r.id='c_'+c.id; r.min=c.min; r.max=c.max; r.step=c.step; r.value=c.get();
+      r.addEventListener('input',function(){ c.set(parseFloat(r.value)); refresh(); });
+      d.appendChild(l); d.appendChild(r); p.appendChild(d);
+      panelCtls.push({c:c, v:l.lastChild, r:r});
+    } else if(c.type==='buttons'){
+      var d2=document.createElement('div'); d2.className='ctl';
+      var l2=document.createElement('label'); l2.innerHTML='<span></span>'; l2.firstChild.textContent=c.label;
+      var row=document.createElement('div'); row.className='btnrow';
+      c.opts.forEach(function(o,oi){
+        var b=document.createElement('button'); b.className='b'; b.type='button'; b.textContent=o;
+        b.setAttribute('aria-pressed', S.fillStage===oi ? 'true':'false');
+        b.addEventListener('click',function(){S.fillStage=oi;render()});
+        row.appendChild(b);
+      });
+      d2.appendChild(l2); d2.appendChild(row); p.appendChild(d2);
+    } else if(c.type==='pbuttons'){
+      var d3=document.createElement('div'); d3.className='ctl'; d3.style.flex='1 1 420px';
+      var l3=document.createElement('label'); l3.innerHTML='<span></span>';
+      l3.firstChild.textContent=c.label;
+      var row3=document.createElement('div'); row3.className='btnrow';
+      Object.keys(PATTERNS).forEach(function(k){
+        var b=document.createElement('button'); b.className='b'; b.type='button';
+        b.textContent=PATTERNS[k].name;
+        b.setAttribute('aria-pressed', S.pattern===k ? 'true':'false');
+        b.addEventListener('click',function(){S.pattern=k; render()});
+        row3.appendChild(b);
+      });
+      d3.appendChild(l3); d3.appendChild(row3); p.appendChild(d3);
+    } else if(c.type==='toggle'){
+      var dT=document.createElement('div'); dT.className='ctl'; dT.style.flex='1 1 300px';
+      var lT=document.createElement('label'); lT.innerHTML='<span></span>'; lT.firstChild.textContent=c.label;
+      var rowT=document.createElement('div'); rowT.className='btnrow';
+      c.opts.forEach(function(o){
+        var b=document.createElement('button'); b.className='b'; b.type='button'; b.textContent=o[1];
+        b.setAttribute('aria-pressed', c.get()===o[0] ? 'true':'false');
+        b.addEventListener('click',function(){ c.set(o[0]); render(); });
+        rowT.appendChild(b);
+      });
+      dT.appendChild(lT); dT.appendChild(rowT); p.appendChild(dT);
+    } else if(c.type==='lbuttons'){
+      var d4=document.createElement('div'); d4.className='ctl'; d4.style.flex='1 1 300px';
+      var l4=document.createElement('label'); l4.innerHTML='<span></span>'; l4.firstChild.textContent=c.label;
+      var row4=document.createElement('div'); row4.className='btnrow';
+      [['bend','Bend it'],['crush','Squash it']].forEach(function(o){
+        var b=document.createElement('button'); b.className='b'; b.type='button'; b.textContent=o[1];
+        b.setAttribute('aria-pressed', S.load===o[0] ? 'true':'false');
+        b.addEventListener('click',function(){S.load=o[0]; render();});
+        row4.appendChild(b);
+      });
+      d4.appendChild(l4); d4.appendChild(row4); p.appendChild(d4);
+    } else if(c.type==='button'){
+      var row2=document.createElement('div'); row2.className='btnrow';
+      var b2=document.createElement('button'); b2.className='b'; b2.type='button';
+      if(c.id==='reveal'){
+        row2.style.flex='1 1 100%'; row2.style.order='-1';
+        b2.style.fontSize='15px'; b2.style.padding='13px 22px'; b2.style.fontWeight='700';
+        b2.style.borderWidth='2px'; b2.style.borderColor=cssv('--amber');
+        b2.textContent = S.revealed ? 'Hide the answer' : c.label;
+        if(S.revealed) b2.classList.add('on');
+        b2.addEventListener('click',function(){S.revealed=!S.revealed;render()});
+      } else if(c.id==='addfill'){
+        b2.textContent = c.label;
+        b2.addEventListener('click',function(){ S.infillOn=true; if(!S.density) S.density=20; render(); });
+      } else {
+        b2.textContent = S.playing ? 'Stop' : c.label;
+        if(S.playing) b2.classList.add('on');
+        b2.addEventListener('click',togglePlay);
+      }
+      row2.appendChild(b2); p.appendChild(row2);
+    }
+  });
+  } else {
+    for(var ci=0;ci<panelCtls.length;ci++){
+      var pc=panelCtls[ci];
+      if(pc.v) pc.v.textContent=pc.c.fmt(pc.c.get());
+      if(pc.r && pc.r.value!==String(pc.c.get())) pc.r.value=pc.c.get();
+    }
+  }
+
+  // extras
+  var ex=document.getElementById('extra'); ex.innerHTML='';
+  if(st.meters){
+    var mw=document.createElement('div'); mw.className='meters';
+    st.meters().forEach(function(m){
+      var row=document.createElement('div'); row.className='meter';
+      var a=document.createElement('div'); a.className='ml'; a.textContent=m.l;
+      var b=document.createElement('div'); b.className='bar';
+      var f=document.createElement('div'); f.className='fill'+(m.c2?' c2':'');
+      f.style.width=Math.max(0,Math.min(100,m.pct))+'%'; b.appendChild(f);
+      var c3=document.createElement('div'); c3.className='mv'; c3.textContent=m.v;
+      row.appendChild(a); row.appendChild(b); row.appendChild(c3); mw.appendChild(row);
+    });
+    ex.appendChild(mw);
+  }
+  if(st.reads){
+    var rw=document.createElement('div'); rw.className='reads';
+    st.reads().forEach(function(r){
+      var d=document.createElement('div'); d.className='read'+(r.cls?' '+r.cls:'');
+      var k=document.createElement('div'); k.className='k'; k.textContent=r.k;
+      var v=document.createElement('div'); v.className='v'; v.textContent=r.v;
+      if(r.s){var sm=document.createElement('small'); sm.textContent=' '+r.s; v.appendChild(sm);}
+      d.appendChild(k); d.appendChild(v); rw.appendChild(d);
+    });
+    ex.appendChild(rw);
+  }
+
+  document.getElementById('prev').disabled = S.step===0;
+  document.getElementById('next').disabled = S.step===STEPS.length-1;
+  document.getElementById('hint').textContent='step '+(S.step+1)+' / '+STEPS.length;
+}
+
+function go(i){
+  if(i<0||i>=STEPS.length) return;
+  S.playing=0; if(raf) cancelAnimationFrame(raf); raf=null;
+  S.step=i;
+  if(i===1) S.fillStage=0;
+  if(i===3) S.revealed=false;
+  render();
+}
+document.getElementById('prev').addEventListener('click',function(){go(S.step-1)});
+document.getElementById('next').addEventListener('click',function(){go(S.step+1)});
+document.addEventListener('keydown',function(e){
+  if(e.target && /input|textarea/i.test(e.target.tagName)) return;
+  if(e.key==='ArrowRight'){go(S.step+1)}
+  else if(e.key==='ArrowLeft'){go(S.step-1)}
+});
+
+var raf=null, dir=1;
+function togglePlay(){ S.playing ? stopPlay() : startPlay(); }
+function startPlay(){
+  S.playing=1; render();
+  var last=performance.now();
+  (function loop(now){
+    if(!S.playing) return;
+    var dt=Math.min(64,now-last); last=now;
+    S.layer += dir*dt*0.016;
+    if(S.layer>=NLAY){S.layer=NLAY;dir=-1} else if(S.layer<=1){S.layer=1;dir=1}
+    refresh();
+    raf=requestAnimationFrame(loop);
+  })(performance.now());
+}
+function stopPlay(){
+  var was=S.playing;
+  S.playing=0;
+  if(raf) cancelAnimationFrame(raf);
+  raf=null;
+  if(was) render();          // put the button back to "Sweep"
+}
+
+// SVG colours are read from the CSS tokens at draw time, so redraw whenever the theme moves
+function watchTheme(){
+  function again(){ render(); }
+  try{
+    var mq=window.matchMedia('(prefers-color-scheme: dark)');
+    if(mq.addEventListener) mq.addEventListener('change',again);
+    else if(mq.addListener) mq.addListener(again);
+  }catch(e){}
+  try{
+    new MutationObserver(again).observe(document.documentElement,
+      {attributes:true,attributeFilter:['data-theme','class','style']});
+  }catch(e){}
+  setTimeout(again,60);
+  setTimeout(again,400);
+  setTimeout(again,1200);
+}
+
+render();
+watchTheme();
+})();
+</script>
+</body>
+</html>
