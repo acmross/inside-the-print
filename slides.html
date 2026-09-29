@@ -18,6 +18,13 @@
   .slide{position:absolute;inset:0;display:none}
   .slide.on{display:block}
   .slide > section{width:1920px;height:1080px;position:relative;overflow:hidden}
+  .slide *,.slide *::before,.slide *::after{box-sizing:border-box;border:0 solid}
+  .slide h1,.slide h2,.slide h3,.slide h4,.slide h5,.slide h6{font-size:inherit;font-weight:inherit;margin:0}
+  .slide p,.slide figure,.slide blockquote,.slide dl,.slide dd,.slide pre,.slide ul,.slide ol{margin:0}
+  .slide ul,.slide ol{list-style:none;padding:0}
+  .slide svg{display:block;vertical-align:middle}
+  .slide b,.slide strong{font-weight:bolder}
+  .slide a{color:inherit;text-decoration:inherit}
   #bar{position:fixed;left:0;right:0;bottom:0;height:34px;display:flex;align-items:center;
     gap:18px;padding:0 16px;background:#0d1116;border-top:1px solid #1c2430;font-size:13px;
     color:#7c8a99;letter-spacing:1px;z-index:5;transition:right .18s ease}
@@ -595,6 +602,10 @@ document.getElementById('bf').onclick = full;
 document.getElementById('bh').onclick = function(){ document.body.classList.toggle('help'); };
 document.getElementById('help').onclick = function(){ document.body.classList.remove('help'); };
 addEventListener('resize', fit);
+addEventListener('hashchange', function(){
+  var n = parseInt((location.hash || '').slice(1), 10);
+  if (!isNaN(n) && n - 1 !== i) show(n - 1);
+});
 var start = parseInt((location.hash || '').slice(1), 10);
 show(isNaN(start) ? 0 : start - 1);
 fit();
