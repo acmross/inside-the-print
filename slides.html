@@ -72,6 +72,22 @@
   body.pres #notes .body{font-size:23px;line-height:1.62}
   body.pres #bar{right:0}
   body.pres #bp{display:none}
+  /* ---- docked teaching aid ---- */
+  #aid{position:fixed;right:18px;bottom:52px;width:1280px;height:1150px;z-index:7;
+    transform-origin:100% 100%;display:none;border-radius:10px;overflow:hidden;
+    background:#0d1116;box-shadow:0 18px 60px rgba(0,0,0,.75),0 0 0 2px #22d3ee;
+    transition:transform .28s cubic-bezier(.2,.7,.3,1)}
+  body.aid #aid{display:block}
+  body.pres #aid{display:none!important}
+  #aid iframe{width:1280px;height:calc(1150px - 38px);border:0;display:block;background:#0d1116}
+  #aidbar{height:38px;display:flex;align-items:center;gap:14px;padding:0 14px;
+    background:#161c24;border-bottom:1px solid #22304a;font-size:17px;color:#aebcc9;
+    letter-spacing:1px;cursor:pointer;user-select:none}
+  #aidbar b{color:#22d3ee;font-weight:700}
+  #aidbar .sp{flex:1}
+  #aidbar span.k{font-size:15px;color:#5b6c7c}
+  #aidhit{position:absolute;inset:38px 0 0 0;display:none;cursor:zoom-in}
+  body.aidmin #aidhit{display:block}
   #bar{transition:right .18s ease, opacity .35s ease}
   body.idle:not(.pres) #bar{opacity:0;pointer-events:none}
   body.idle:not(.pres){cursor:none}
@@ -567,10 +583,18 @@
   <span><b id="num">1</b> / 12</span>
   <span id="ttl"></span>
   <span class="sp"></span>
+  <button id="bv">Tool (V)</button>
   <button id="bp">Presenter (P)</button>
   <button id="bn">Notes (N)</button>
   <button id="bf">Full screen (F)</button>
   <button id="bh">Keys (?)</button>
+</div>
+<div id="aid">
+  <div id="aidbar"><b>Teaching aid</b><span class="sp"></span>
+    <span class="k" id="aidstate">click to enlarge</span>
+    <span class="k">V hides it</span></div>
+  <iframe id="aidframe" title="Inside the Print slicer visualizer" data-src="./index.html"></iframe>
+  <div id="aidhit"></div>
 </div>
 <div id="meta">
   <div id="clock">00:00<small>elapsed · target 12:00 · click to reset</small></div>
@@ -586,6 +610,8 @@
   <p><kbd>&rarr;</kbd> next slide &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> previous</p>
   <p><kbd>N</kbd> show or hide the speaker notes</p>
   <p><kbd>P</kbd> open the presenter window (notes on this screen, slides on the projector)</p>
+  <p><kbd>V</kbd> show or hide the visualizer, docked in the corner</p>
+  <p><kbd>B</kbd> grow it to fill the screen, or shrink it back to the corner</p>
   <p><kbd>F</kbd> full screen</p>
   <p><kbd>1</kbd>&ndash;<kbd>9</kbd> jump straight to a slide</p>
   <p><kbd>Esc</kbd> close this</p>
@@ -649,9 +675,16 @@ addEventListener('keydown', function(e){
   else if (k === 'End') show(slides.length - 1);
   else if (k === 'n' || k === 'N') notes();
   else if (k === 'p' || k === 'P') openPresenter();
+  else if (k === 'v' || k === 'V') aidToggle();
+  else if (k === 'b' || k === 'B') aidSize();
   else if (k === 'f' || k === 'F') full();
   else if (k === '?') document.body.classList.toggle('help');
-  else if (k === 'Escape') document.body.classList.remove('help');
+  else if (k === 'Escape') {
+    if (document.body.classList.contains('help')) document.body.classList.remove('help');
+    else if (document.body.classList.contains('aid') &&
+             !document.body.classList.contains('aidmin')) aidSize();
+    else document.body.classList.remove('aid');
+  }
   else if (k >= '1' && k <= '9') show(parseInt(k, 10) - 1);
 });
 document.getElementById('bn').onclick = notes;
@@ -663,12 +696,40 @@ addEventListener('hashchange', function(){
   var n = parseInt((location.hash || '').slice(1), 10);
   if (!isNaN(n) && n - 1 !== i) show(n - 1);
 });
+// ---- docked teaching aid ----
+var aidEl = document.getElementById('aid'), aidFr = document.getElementById('aidframe');
+function sizeAid(){
+  var big = !document.body.classList.contains('aidmin');
+  var k = big ? Math.min((innerWidth - 56) / 1280, (innerHeight - 100) / 1150) : 0.26;
+  aidEl.style.transform = 'scale(' + k + ')';
+  document.getElementById('aidstate').textContent =
+    big ? 'click to shrink' : 'click to enlarge';
+}
+function aidToggle(){
+  if (document.body.classList.contains('aid')) { document.body.classList.remove('aid'); return; }
+  if (!aidFr.src) aidFr.src = aidFr.getAttribute('data-src');
+  document.body.classList.add('aid');
+  if (!document.body.classList.contains('aidmin') && !document.body.classList.contains('aidbig'))
+    document.body.classList.add('aidmin');
+  sizeAid();
+}
+function aidSize(){
+  if (!document.body.classList.contains('aid')) return aidToggle();
+  document.body.classList.toggle('aidmin');
+  sizeAid();
+}
+document.getElementById('aidbar').onclick = aidSize;
+document.getElementById('aidhit').onclick = aidSize;
+document.getElementById('bv').onclick = aidToggle;
+addEventListener('resize', sizeAid);
+
 var idleT;
 function stir(){
   document.body.classList.remove('idle');
   clearTimeout(idleT);
   idleT = setTimeout(function(){ document.body.classList.add('idle'); }, 2500);
 }
+document.body.classList.add('aidmin');
 if (!PRES) { ['mousemove','mousedown','keydown','touchstart'].forEach(function(ev){
   addEventListener(ev, stir, {passive:true}); }); stir(); }
 
