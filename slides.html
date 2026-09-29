@@ -73,20 +73,29 @@
   body.pres #bar{right:0}
   body.pres #bp{display:none}
   /* ---- docked teaching aid ---- */
-  #aid{position:fixed;right:18px;bottom:52px;width:1280px;height:1150px;z-index:7;
-    transform-origin:100% 100%;display:none;border-radius:10px;overflow:hidden;
-    background:#0d1116;box-shadow:0 18px 60px rgba(0,0,0,.75),0 0 0 2px #22d3ee;
-    transition:transform .28s cubic-bezier(.2,.7,.3,1)}
+  #aid{position:fixed;z-index:7;display:none;border-radius:10px;overflow:hidden;
+    background:#0d1116;box-shadow:0 18px 60px rgba(0,0,0,.75),0 0 0 2px #22d3ee}
   body.aid #aid{display:block}
   body.pres #aid{display:none!important}
-  #aid iframe{width:1280px;height:calc(1150px - 38px);border:0;display:block;background:#0d1116}
-  #aidbar{height:38px;display:flex;align-items:center;gap:14px;padding:0 14px;
-    background:#161c24;border-bottom:1px solid #22304a;font-size:17px;color:#aebcc9;
-    letter-spacing:1px;cursor:pointer;user-select:none}
+  /* corner: a scaled-down thumbnail */
+  body.aidmin #aid{right:18px;bottom:52px;width:1200px;height:1000px;
+    transform-origin:100% 100%;transform:scale(.27)}
+  /* full: fills the window, content zoomed past 1:1 so the room can read it */
+  body.aid:not(.aidmin) #aid{left:0;top:0;right:0;bottom:0;width:auto;height:auto;
+    border-radius:0;transform:none;box-shadow:none}
+  #aidwrap{position:absolute;left:0;top:34px;right:0;bottom:0;overflow:auto;background:#0d1116}
+  #aid iframe{border:0;display:block;background:#0d1116;transform-origin:0 0}
+  body.aidmin #aidwrap{overflow:hidden}
+  body.aidmin #aid iframe{width:1200px;height:966px;transform:none}
+  #aidbar{position:absolute;left:0;top:0;right:0;height:34px;display:flex;align-items:center;
+    gap:16px;padding:0 16px;background:#161c24;border-bottom:1px solid #22304a;
+    color:#aebcc9;letter-spacing:1px;cursor:pointer;user-select:none;z-index:2}
   #aidbar b{color:#22d3ee;font-weight:700}
   #aidbar .sp{flex:1}
-  #aidbar span.k{font-size:15px;color:#5b6c7c}
-  #aidhit{position:absolute;inset:38px 0 0 0;display:none;cursor:zoom-in}
+  #aidbar span.k{color:#5b6c7c}
+  body.aidmin #aidbar{height:34px;font-size:19px}
+  body.aid:not(.aidmin) #aidbar{font-size:14px}
+  #aidhit{position:absolute;inset:34px 0 0 0;display:none;cursor:zoom-in;z-index:3}
   body.aidmin #aidhit{display:block}
   #bar{transition:right .18s ease, opacity .35s ease}
   body.idle:not(.pres) #bar{opacity:0;pointer-events:none}
@@ -591,8 +600,11 @@
 </div>
 <div id="aid">
   <div id="aidbar"><b>Teaching aid</b><span class="sp"></span>
+    <span class="k" id="aidzoom"></span>
     <span class="k" id="aidstate">V to enlarge</span></div>
-  <iframe id="aidframe" title="Inside the Print slicer visualizer" data-src="./index.html"></iframe>
+  <div id="aidwrap">
+    <iframe id="aidframe" title="Inside the Print slicer visualizer" data-src="./index.html"></iframe>
+  </div>
   <div id="aidhit"></div>
 </div>
 <div id="meta">
@@ -610,6 +622,7 @@
   <p><kbd>N</kbd> show or hide the speaker notes</p>
   <p><kbd>P</kbd> open the presenter window (notes on this screen, slides on the projector)</p>
   <p><kbd>V</kbd> the visualizer: once for the corner, again to fill the screen, again to close</p>
+  <p><kbd>+</kbd> <kbd>&minus;</kbd> make the visualizer's text bigger or smaller while it fills the screen</p>
   <p><kbd>F</kbd> full screen</p>
   <p><kbd>1</kbd>&ndash;<kbd>9</kbd> jump straight to a slide</p>
   <p><kbd>Esc</kbd> close this</p>
@@ -674,6 +687,8 @@ addEventListener('keydown', function(e){
   else if (k === 'n' || k === 'N') notes();
   else if (k === 'p' || k === 'P') openPresenter();
   else if (k === 'v' || k === 'V') aidCycle();
+  else if ((k === '+' || k === '=') && aidStep === 2) { aidNudge(0.1); e.preventDefault(); }
+  else if ((k === '-' || k === '_') && aidStep === 2) { aidNudge(-0.1); e.preventDefault(); }
   else if (k === 'f' || k === 'F') full();
   else if (k === '?') document.body.classList.toggle('help');
   else if (k === 'Escape') {
@@ -693,24 +708,83 @@ addEventListener('hashchange', function(){
 });
 // ---- docked teaching aid: V cycles hidden -> corner -> full -> hidden ----
 var aidEl = document.getElementById('aid'), aidFr = document.getElementById('aidframe');
-var aidStep = 0;   // 0 hidden, 1 corner, 2 full
+var aidStep = 0, aidZ = 1.2, aidManual = false, aidPass = 0;   // 0 hidden, 1 corner, 2 full
+var aidBoosted = false;
+function aidBoost(){
+  // the tool is built for a laptop at arm's length; lift its smallest labels
+  // so they survive a projector. runs once, after the frame loads.
+  try {
+    var d = aidFr.contentDocument; if (!d || aidBoosted) return;
+    var els = d.querySelectorAll('*'), n = 0;
+    for (var j = 0; j < els.length; j++) {
+      var e = els[j];
+      if (e.tagName === 'SVG' || e.closest('svg')) continue;
+      var fs = parseFloat(getComputedStyle(e).fontSize);
+      if (fs && fs < 15) { e.style.fontSize = Math.max(15, fs * 1.3).toFixed(1) + 'px'; n++; }
+    }
+    aidBoosted = n > 0;
+  } catch (e) {}
+}
+function aidContentHeight(){
+  try {
+    var d = aidFr.contentDocument; if (!d) return 0;
+    var w = d.querySelector('.wrap') || d.body;
+    var r = w.getBoundingClientRect();
+    return Math.ceil(r.bottom + 24);
+  } catch (e) { return 0; }
+}
 function aidApply(){
   document.body.classList.toggle('aid', aidStep > 0);
   document.body.classList.toggle('aidmin', aidStep === 1);
-  if (aidStep === 0) return;
-  var k = (aidStep === 2)
-    ? Math.min((innerWidth - 56) / 1280, (innerHeight - 100) / 1150)
-    : 0.26;
-  aidEl.style.transform = 'scale(' + k + ')';
-  document.getElementById('aidstate').textContent =
-    (aidStep === 1) ? 'V to enlarge' : 'V to close';
+  var z = document.getElementById('aidzoom'), st = document.getElementById('aidstate');
+  if (aidStep === 2) {
+    var w = innerWidth, h = innerHeight - 34;
+    if (!aidManual) {
+      // biggest text that still shows the whole tool, controls included
+      var ch = aidContentHeight();
+      aidZ = ch ? Math.max(0.9, Math.min(1.85, (h / ch) * 0.995)) : 1;
+      if (w / aidZ < 1060) aidZ = w / 1060;   // never squeeze the layout narrower than it wants
+    }
+    aidFr.style.width  = Math.round(w / aidZ) + 'px';
+    aidFr.style.height = Math.round(h / aidZ) + 'px';
+    aidFr.style.transform = 'scale(' + aidZ + ')';
+    z.textContent = 'text size ' + Math.round(aidZ * 100) + '%  ·  + / − to adjust';
+    st.textContent = 'V to close';
+    // the tool reflows once it has the new width, so settle the fit on the real height
+    if (!aidManual && aidPass < 3) {
+      aidPass++;
+      requestAnimationFrame(function(){
+        var ch2 = aidContentHeight();
+        if (!ch2) { aidPass = 3; return; }
+        var want = Math.max(0.9, Math.min(1.85, ((innerHeight - 34) / ch2) * 0.995));
+        if (Math.abs(want - aidZ) > 0.015) { aidZ = want; aidApply(); } else aidPass = 3;
+      });
+    }
+  } else if (aidStep === 1) {
+    aidFr.style.width = ''; aidFr.style.height = ''; aidFr.style.transform = '';
+    z.textContent = ''; st.textContent = 'V to enlarge';
+  }
 }
 function aidCycle(){
   aidStep = (aidStep + 1) % 3;
+  aidPass = 0;
   if (aidStep === 1 && !aidFr.src) aidFr.src = aidFr.getAttribute('data-src');
+  else aidBoost();
   aidApply();
 }
 function aidClose(){ aidStep = 0; aidApply(); }
+function aidNudge(d){
+  if (aidStep !== 2) return;
+  aidManual = true;
+  aidZ = Math.max(0.8, Math.min(2.4, Math.round((aidZ + d) * 20) / 20));
+  try { localStorage.setItem('itp-aidz', aidZ); } catch (e) {}
+  aidApply();
+}
+try {
+  var sz = parseFloat(localStorage.getItem('itp-aidz'));
+  if (sz) { aidZ = sz; aidManual = true; }
+} catch (e) {}
+aidFr.addEventListener('load', function(){ aidBoost(); if (aidStep) aidApply(); });
 document.getElementById('aidbar').onclick = aidClose;
 document.getElementById('aidhit').onclick = aidCycle;
 document.getElementById('bv').onclick = aidCycle;
