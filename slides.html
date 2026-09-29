@@ -591,8 +591,7 @@
 </div>
 <div id="aid">
   <div id="aidbar"><b>Teaching aid</b><span class="sp"></span>
-    <span class="k" id="aidstate">click to enlarge</span>
-    <span class="k">V hides it</span></div>
+    <span class="k" id="aidstate">V to enlarge</span></div>
   <iframe id="aidframe" title="Inside the Print slicer visualizer" data-src="./index.html"></iframe>
   <div id="aidhit"></div>
 </div>
@@ -610,8 +609,7 @@
   <p><kbd>&rarr;</kbd> next slide &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> previous</p>
   <p><kbd>N</kbd> show or hide the speaker notes</p>
   <p><kbd>P</kbd> open the presenter window (notes on this screen, slides on the projector)</p>
-  <p><kbd>V</kbd> show or hide the visualizer, docked in the corner</p>
-  <p><kbd>B</kbd> grow it to fill the screen, or shrink it back to the corner</p>
+  <p><kbd>V</kbd> the visualizer: once for the corner, again to fill the screen, again to close</p>
   <p><kbd>F</kbd> full screen</p>
   <p><kbd>1</kbd>&ndash;<kbd>9</kbd> jump straight to a slide</p>
   <p><kbd>Esc</kbd> close this</p>
@@ -675,15 +673,12 @@ addEventListener('keydown', function(e){
   else if (k === 'End') show(slides.length - 1);
   else if (k === 'n' || k === 'N') notes();
   else if (k === 'p' || k === 'P') openPresenter();
-  else if (k === 'v' || k === 'V') aidToggle();
-  else if (k === 'b' || k === 'B') aidSize();
+  else if (k === 'v' || k === 'V') aidCycle();
   else if (k === 'f' || k === 'F') full();
   else if (k === '?') document.body.classList.toggle('help');
   else if (k === 'Escape') {
     if (document.body.classList.contains('help')) document.body.classList.remove('help');
-    else if (document.body.classList.contains('aid') &&
-             !document.body.classList.contains('aidmin')) aidSize();
-    else document.body.classList.remove('aid');
+    else aidClose();
   }
   else if (k >= '1' && k <= '9') show(parseInt(k, 10) - 1);
 });
@@ -696,32 +691,30 @@ addEventListener('hashchange', function(){
   var n = parseInt((location.hash || '').slice(1), 10);
   if (!isNaN(n) && n - 1 !== i) show(n - 1);
 });
-// ---- docked teaching aid ----
+// ---- docked teaching aid: V cycles hidden -> corner -> full -> hidden ----
 var aidEl = document.getElementById('aid'), aidFr = document.getElementById('aidframe');
-function sizeAid(){
-  var big = !document.body.classList.contains('aidmin');
-  var k = big ? Math.min((innerWidth - 56) / 1280, (innerHeight - 100) / 1150) : 0.26;
+var aidStep = 0;   // 0 hidden, 1 corner, 2 full
+function aidApply(){
+  document.body.classList.toggle('aid', aidStep > 0);
+  document.body.classList.toggle('aidmin', aidStep === 1);
+  if (aidStep === 0) return;
+  var k = (aidStep === 2)
+    ? Math.min((innerWidth - 56) / 1280, (innerHeight - 100) / 1150)
+    : 0.26;
   aidEl.style.transform = 'scale(' + k + ')';
   document.getElementById('aidstate').textContent =
-    big ? 'click to shrink' : 'click to enlarge';
+    (aidStep === 1) ? 'V to enlarge' : 'V to close';
 }
-function aidToggle(){
-  if (document.body.classList.contains('aid')) { document.body.classList.remove('aid'); return; }
-  if (!aidFr.src) aidFr.src = aidFr.getAttribute('data-src');
-  document.body.classList.add('aid');
-  if (!document.body.classList.contains('aidmin') && !document.body.classList.contains('aidbig'))
-    document.body.classList.add('aidmin');
-  sizeAid();
+function aidCycle(){
+  aidStep = (aidStep + 1) % 3;
+  if (aidStep === 1 && !aidFr.src) aidFr.src = aidFr.getAttribute('data-src');
+  aidApply();
 }
-function aidSize(){
-  if (!document.body.classList.contains('aid')) return aidToggle();
-  document.body.classList.toggle('aidmin');
-  sizeAid();
-}
-document.getElementById('aidbar').onclick = aidSize;
-document.getElementById('aidhit').onclick = aidSize;
-document.getElementById('bv').onclick = aidToggle;
-addEventListener('resize', sizeAid);
+function aidClose(){ aidStep = 0; aidApply(); }
+document.getElementById('aidbar').onclick = aidClose;
+document.getElementById('aidhit').onclick = aidCycle;
+document.getElementById('bv').onclick = aidCycle;
+addEventListener('resize', function(){ if (aidStep) aidApply(); });
 
 var idleT;
 function stir(){
@@ -729,7 +722,6 @@ function stir(){
   clearTimeout(idleT);
   idleT = setTimeout(function(){ document.body.classList.add('idle'); }, 2500);
 }
-document.body.classList.add('aidmin');
 if (!PRES) { ['mousemove','mousedown','keydown','touchstart'].forEach(function(ev){
   addEventListener(ev, stir, {passive:true}); }); stir(); }
 
